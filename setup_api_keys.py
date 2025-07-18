@@ -88,10 +88,10 @@ def get_openai_key(current_key):
         # Test the API key
         print("🧪 Testing API key...")
         try:
-            import openai
-            openai.api_key = api_key
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key)
             
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model='gpt-3.5-turbo',
                 messages=[{'role': 'user', 'content': 'Hello'}],
                 max_tokens=5
