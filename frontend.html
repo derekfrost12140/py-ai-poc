@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Agent Orchestration System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 80%;
+        }
+
+        .user-message {
+            background: #007bff;
+            color: white;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .agent-message {
+            background: white;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .tool-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        #queryInput {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #queryInput:focus {
+            border-color: #667eea;
+        }
+
+        #sendButton {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        #sendButton:hover {
+            transform: translateY(-2px);
+        }
+
+        #sendButton:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            color: #c62828;
+        }
+
+        .success {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            color: #2e7d32;
+        }
+
+        .examples {
+            padding: 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .examples h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .example-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .example-btn {
+            padding: 8px 16px;
+            background: #e9ecef;
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .example-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 MCP Agent</h1>
+            <p>AI-powered tool orchestration system</p>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="message agent-message">
+                <strong>MCP Agent:</strong> Hello! I'm your AI assistant. I can help you with:
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>🌤️ Weather information for any location</li>
+                    <li>🗄️ Database queries (users, etc.)</li>
+                    <li>🚀 SpaceX launch information</li>
+                </ul>
+                <p style="margin-top: 10px;">Just ask me anything!</p>
+            </div>
+        </div>
+
+        <div class="examples">
+            <h3>💡 Try these examples:</h3>
+            <div class="example-buttons">
+                <button class="example-btn" onclick="sendExample('What is the weather in Paris?')">Weather in Paris</button>
+                <button class="example-btn" onclick="sendExample('Show all users in the database')">List Users</button>
+                <button class="example-btn" onclick="sendExample('What were the last 3 SpaceX launches?')">SpaceX Launches</button>
+                <button class="example-btn" onclick="sendExample('How many users are in the system?')">User Count</button>
+                <button class="example-btn" onclick="sendExample('What is the temperature in Tokyo?')">Tokyo Weather</button>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <div class="input-group">
+                <input type="text" id="queryInput" placeholder="Ask me anything..." onkeypress="handleKeyPress(event)">
+                <button id="sendButton" onclick="sendQuery()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        const chatContainer = document.getElementById('chatContainer');
+        const queryInput = document.getElementById('queryInput');
+        const sendButton = document.getElementById('sendButton');
+
+        function addMessage(content, isUser = false, toolInfo = null, isError = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'agent-message'}`;
+            
+            if (isError) {
+                messageDiv.classList.add('error');
+            }
+
+            let html = `<strong>${isUser ? 'You' : 'MCP Agent'}:</strong> ${content}`;
+            
+            if (toolInfo && !isUser) {
+                html += `
+                    <div class="tool-info">
+                        <strong>Tool Used:</strong> ${toolInfo.tool}<br>
+                        <strong>Parameters:</strong> ${JSON.stringify(toolInfo.parameters)}
+                    </div>
+                `;
+            }
+
+            messageDiv.innerHTML = html;
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function setLoading(loading) {
+            sendButton.disabled = loading;
+            if (loading) {
+                sendButton.innerHTML = '<span class="loading"></span> Processing...';
+            } else {
+                sendButton.innerHTML = 'Send';
+            }
+        }
+
+        async function sendQuery() {
+            const query = queryInput.value.trim();
+            if (!query) return;
+
+            // Add user message
+            addMessage(query, true);
+            queryInput.value = '';
+
+            // Set loading state
+            setLoading(true);
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    addMessage(data.result, false, {
+                        tool: data.tool_selected,
+                        parameters: data.parameters
+                    });
+                } else {
+                    addMessage(`Error: ${data.error}`, false, null, true);
+                }
+
+            } catch (error) {
+                console.error('Query error:', error);
+                addMessage(`Connection error: ${error.message}. Please make sure the server is running on http://localhost:8000`, false, null, true);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function sendExample(example) {
+            queryInput.value = example;
+            sendQuery();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendQuery();
+            }
+        }
+
+        // Check if server is running
+        async function checkServerHealth() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.agent_initialized) {
+                    addMessage('⚠️ Warning: MCP Agent is not fully initialized. Please check your API keys and configuration.', false, null, true);
+                } else {
+                    addMessage('✅ Connected to MCP Agent server successfully!', false, null, false);
+                }
+            } catch (error) {
+                console.error('Health check error:', error);
+                addMessage('⚠️ Warning: Cannot connect to the MCP Agent server. Make sure the server is running on http://localhost:8000', false, null, true);
+            }
+        }
+
+        // Check server health on page load
+        checkServerHealth();
+    </script>
+</body>
+</html> 

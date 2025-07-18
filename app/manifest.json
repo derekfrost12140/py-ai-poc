@@ -1,0 +1,40 @@
+{
+  "tools": [
+    {
+      "name": "weather_tool",
+      "description": "Get current weather information for a specific location",
+      "type": "rest",
+      "parameters": {
+        "location": {
+          "type": "string",
+          "description": "City name or location to get weather for",
+          "required": true
+        }
+      }
+    },
+    {
+      "name": "sql_tool",
+      "description": "Execute SQL queries on the local database",
+      "type": "sql",
+      "parameters": {
+        "sql_query": {
+          "type": "string",
+          "description": "SQL query to execute",
+          "required": true
+        }
+      }
+    },
+    {
+      "name": "graphql_tool",
+      "description": "Query SpaceX GraphQL API for mission and launch information",
+      "type": "graphql",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "description": "GraphQL query to execute",
+          "required": true
+        }
+      }
+    }
+  ]
+} 
