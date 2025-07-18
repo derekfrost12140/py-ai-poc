@@ -35,6 +35,18 @@
           "required": true
         }
       }
+    },
+    {
+      "name": "system_info_tool",
+      "description": "Get information about the system architecture, available tools, and capabilities",
+      "type": "system",
+      "parameters": {
+        "query": {
+          "type": "string",
+          "description": "System-related question about tools, architecture, or capabilities",
+          "required": true
+        }
+      }
     }
   ]
 } 

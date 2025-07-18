@@ -56,6 +56,8 @@ User query: "{user_query}"
 
 Based on the user's request, determine which tool to use and extract the necessary parameters.
 
+Note: For system-related questions like "What tools are available?", "Show me the architecture", "How does this work?", "What can you do?", use the system_info_tool.
+
 Respond ONLY with a JSON object in this exact format:
 {{
     "tool": "tool_name",
@@ -68,6 +70,7 @@ Examples:
 - For weather queries: {{"tool": "weather_tool", "parameters": {{"location": "Paris"}}}}
 - For database queries: {{"tool": "sql_tool", "parameters": {{"sql_query": "SELECT * FROM users"}}}}
 - For SpaceX queries: {{"tool": "graphql_tool", "parameters": {{"query": "recent launches"}}}}
+- For system info queries: {{"tool": "system_info_tool", "parameters": {{"query": "architecture"}}}}
 
 If no tool matches the request, respond with:
 {{"tool": "none", "parameters": {{}}}}
