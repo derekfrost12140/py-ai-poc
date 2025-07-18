@@ -23,7 +23,6 @@ def check_dependencies():
         import uvicorn
         import openai
         import requests
-        import gql
         import dotenv
         print("✅ All dependencies are installed")
     except ImportError as e:
