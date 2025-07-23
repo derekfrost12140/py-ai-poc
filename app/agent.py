@@ -1,8 +1,8 @@
 import json
 import os
-import openai
 from typing import Dict, Any, Tuple
 from .tools import ToolExecutor
+from .ford_llm import call_model
 
 class MCPAgent:
     """
@@ -11,14 +11,8 @@ class MCPAgent:
     """
     
     def __init__(self):
-        # Load OpenAI API key
-        openai.api_key = os.getenv('OPENAI_API_KEY')
-        if not openai.api_key:
-            raise ValueError("OPENAI_API_KEY not found in environment variables")
-        
         # Load tool manifest (MCP Registry)
         self.manifest = self._load_manifest()
-        
         # Initialize tool executor (MCP Server simulation)
         self.tool_executor = ToolExecutor()
     
@@ -34,7 +28,6 @@ class MCPAgent:
     
     def _create_tool_selection_prompt(self, user_query: str) -> str:
         """Create a structured prompt for the LLM to select the appropriate tool"""
-        
         # Build tool descriptions from manifest
         tool_descriptions = []
         for tool in self.manifest['tools']:
@@ -45,7 +38,6 @@ class MCPAgent:
                     params.append(f"{param_name} ({param_info['type']})")
                 desc += f" [Parameters: {', '.join(params)}]"
             tool_descriptions.append(desc)
-        
         tool_descriptions_str = chr(10).join(tool_descriptions)
         prompt = f"""
 You are an AI agent that needs to select the appropriate tool to handle a user's request.
@@ -89,65 +81,45 @@ If no tool matches the request, respond with:
 JSON response:
 """
         return prompt
-    
+
     def _call_openai(self, prompt: str) -> str:
-        """Call OpenAI GPT-3.5 to get tool selection and parameters"""
-        try:
-            from openai import OpenAI
-            client = OpenAI(api_key=openai.api_key)
-            
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a helpful AI assistant that selects tools based on user requests. Respond only with valid JSON."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.1,
-                max_tokens=200
-            )
-            
-            return response.choices[0].message.content.strip() if response.choices[0].message.content else ""
-            
-        except Exception as e:
-            raise Exception(f"OpenAI API call failed: {str(e)}")
-    
+        # Use Ford LLM instead of OpenAI
+        class State:
+            pass
+        state = State()
+        state.messages = [
+            {"role": "system", "content": "You are a helpful AI assistant that selects tools based on user requests. Respond only with valid JSON."},
+            {"role": "user", "content": prompt}
+        ]
+        result = call_model(state)
+        messages = result.get("messages", [])
+        if messages and "content" in messages[0]:
+            return messages[0]["content"]
+        else:
+            return ""
+
     def _parse_llm_response(self, llm_response: str) -> Tuple[str, Dict[str, Any]]:
-        """Parse the LLM response to extract tool name and parameters"""
         try:
-            # Clean up the response and parse JSON
             response_text = llm_response.strip()
             if response_text.startswith('```json'):
                 response_text = response_text[7:]
             if response_text.endswith('```'):
                 response_text = response_text[:-3]
-            
             parsed = json.loads(response_text)
-            
             tool_name = parsed.get('tool', 'none')
             parameters = parsed.get('parameters', {})
-            
             return tool_name, parameters
-            
         except json.JSONDecodeError as e:
             raise ValueError(f"Failed to parse LLM response as JSON: {e}")
         except Exception as e:
             raise ValueError(f"Error parsing LLM response: {e}")
-    
+
     def _split_instructions(self, user_query: str) -> list:
-        """Split a user query into multiple instructions based on delimiters."""
         import re
-        # Split on '.', ';', ' and ', or newlines, but keep delimiters for context
-        # Avoid splitting inside email addresses or numbers
-        # This is a simple heuristic and can be improved
         parts = re.split(r'(?<=[.!?])\s+|\band\b|;|\n', user_query)
-        # Remove empty and whitespace-only parts
         return [p.strip() for p in parts if p.strip()]
 
     def process_query(self, user_query: str, security_password: str = None) -> Dict[str, Any]:
-        """
-        Main method to process a user query through the MCP-style orchestration system
-        Now supports multi-step prompts with step-by-step results.
-        """
         try:
             instructions = self._split_instructions(user_query)
             if len(instructions) > 1:
@@ -179,7 +151,6 @@ JSON response:
             }
 
     def _process_single_query(self, user_query: str, security_password: str = None) -> Dict[str, Any]:
-        """Process a single instruction (existing logic)."""
         try:
             prompt = self._create_tool_selection_prompt(user_query)
             llm_response = self._call_openai(prompt)
