@@ -27,6 +27,9 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            /* Add a fixed height for flex layout */
+            height: 80vh;
+            min-height: 500px;
         }
         .header {
             background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
@@ -48,11 +51,13 @@
         .chat-container {
             background: #f6f7fb;
             padding: 18px 16px 12px 16px;
-            height: 340px;
+            /* Remove fixed height, use flex-grow */
+            flex: 1 1 auto;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 12px;
+            transition: height 0.4s cubic-bezier(0.4,0,0.2,1);
         }
         .message-row {
             display: flex;
@@ -204,6 +209,12 @@
             color: white;
             border-color: #667eea;
         }
+        #toggleInputBar {
+            transition: background 0.2s;
+        }
+        #toggleInputBar:hover {
+            background: #e0e7ff;
+        }
     </style>
 </head>
 <body>
@@ -215,20 +226,25 @@
         <div style="text-align:center; margin: 0 0 18px 0; color: #3a2c5c; font-size: 1.18em; letter-spacing: 0.5px; font-family: 'Inter', Arial, sans-serif; font-weight: 700; text-shadow: 0 1px 4px rgba(102,126,234,0.13); display:none;">
             <span style="font-weight: 800; color: #764ba2;">#Made with passion</span> by Devansh Swami
         </div>
-        <div class="chat-container" id="chatContainer"></div>
-        <div class="input-bar">
-            <input type="text" id="queryInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
-            <button id="sendButton" onclick="sendQuery()">Send</button>
-            <button class="clear-btn" onclick="clearChat()">Clear Chat</button>
+        <div id="toggleInputBar" style="text-align:center; background:#f6f7fb; cursor:pointer; padding:6px 0; font-size:1.1em; color:#764ba2; user-select:none; border-bottom:1px solid #e3e6f0;">
+            <span id="toggleIcon">▼</span> Hide Input & Examples
         </div>
-        <div class="examples">
-            <h3>💡 Try these examples:</h3>
-            <div class="example-buttons">
-                <button class="example-btn" onclick="sendExample('What is the weather in Paris?')">Weather in Paris</button>
-                <button class="example-btn" onclick="sendExample('Show all users in the database')">List Users</button>
-                <button class="example-btn" onclick="sendExample('What were the last 3 SpaceX launches?')">SpaceX Launches</button>
-                <button class="example-btn" onclick="sendExample('How many users are in the system?')">User Count</button>
-                <button class="example-btn" onclick="sendExample('What is the temperature in Tokyo?')">Tokyo Weather</button>
+        <div class="chat-container" id="chatContainer"></div>
+        <div id="inputExamplesWrapper">
+            <div class="input-bar">
+                <input type="text" id="queryInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+                <button id="sendButton" onclick="sendQuery()">Send</button>
+                <button class="clear-btn" onclick="clearChat()">Clear Chat</button>
+            </div>
+            <div class="examples">
+                <h3>💡 Try these examples:</h3>
+                <div class="example-buttons">
+                    <button class="example-btn" onclick="sendExample('What is the weather in Paris?')">Weather in Paris</button>
+                    <button class="example-btn" onclick="sendExample('Show all users in the database')">List Users</button>
+                    <button class="example-btn" onclick="sendExample('What were the last 3 SpaceX launches?')">SpaceX Launches</button>
+                    <button class="example-btn" onclick="sendExample('How many users are in the system?')">User Count</button>
+                    <button class="example-btn" onclick="sendExample('What is the temperature in Tokyo?')">Tokyo Weather</button>
+                </div>
             </div>
         </div>
     </div>
@@ -342,6 +358,45 @@
         function clearChat() {
             chatContainer.innerHTML = '';
         }
+
+        // SLIDER/MINIMIZE LOGIC
+        const toggleInputBar = document.getElementById('toggleInputBar');
+        const inputExamplesWrapper = document.getElementById('inputExamplesWrapper');
+        const toggleIcon = document.getElementById('toggleIcon');
+        const chatContainerDiv = document.getElementById('chatContainer');
+        let inputVisible = true;
+        toggleInputBar.onclick = function() {
+            inputVisible = !inputVisible;
+            if (!inputVisible) {
+                inputExamplesWrapper.style.maxHeight = inputExamplesWrapper.offsetHeight + 'px';
+                setTimeout(() => {
+                    inputExamplesWrapper.style.transition = 'max-height 0.4s cubic-bezier(0.4,0,0.2,1)';
+                    inputExamplesWrapper.style.maxHeight = '0';
+                    // Expand chat area
+                    chatContainerDiv.style.minHeight = '400px';
+                    // Scroll to bottom after animation
+                    setTimeout(() => {
+                        chatContainerDiv.scrollTop = chatContainerDiv.scrollHeight;
+                    }, 400);
+                }, 10);
+                toggleIcon.textContent = '▲';
+                toggleInputBar.innerHTML = '<span id="toggleIcon">▲</span> Show Input & Examples';
+            } else {
+                inputExamplesWrapper.style.transition = 'max-height 0.4s cubic-bezier(0.4,0,0.2,1)';
+                inputExamplesWrapper.style.maxHeight = '500px';
+                // Restore chat area
+                chatContainerDiv.style.minHeight = '';
+                // Scroll to bottom after animation
+                setTimeout(() => {
+                    chatContainerDiv.scrollTop = chatContainerDiv.scrollHeight;
+                }, 400);
+                toggleIcon.textContent = '▼';
+                toggleInputBar.innerHTML = '<span id="toggleIcon">▼</span> Hide Input & Examples';
+            }
+        };
+        // Set initial max-height for smooth animation
+        inputExamplesWrapper.style.overflow = 'hidden';
+        inputExamplesWrapper.style.maxHeight = '500px';
     </script>
 </body>
 </html> 
