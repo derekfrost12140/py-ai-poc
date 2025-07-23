@@ -29,6 +29,17 @@ User Query → MCP Client (AI Agent) → MCP Registry → MCP Server → Respons
 
 ## Features
 
+### New in This Version
+
+- **Multi-step Prompt Orchestration:** Supports prompts with multiple instructions (e.g., "Add a user and show the weather"), executing each step in sequence and returning step-by-step results.
+- **Frontend UI Enhancements:**
+  - Collapsible input/examples section with a slider for maximizing chat area.
+  - Chat area auto-expands and auto-scrolls to always show the latest message.
+  - Step-by-step results are clearly displayed, including tool and parameter info for each step.
+- **Improved Error Handling:**
+  - Database locking is handled with retries.
+  - Clean display of only relevant tool info in multi-step results.
+
 ### Integrated Tools
 
 | Tool | Type | Description | Example Queries |
@@ -111,6 +122,23 @@ The system will:
 
 ## Usage
 
+### Multi-step Prompts (NEW)
+
+You can now enter prompts with multiple instructions, separated by ".", ";", or "and". The system will process each step in order and return a step-by-step result.
+
+**Example Prompt:**
+
+```
+Add a new user named Priya Sharma with email priya.sharma@gmail.com. What is the weather in Paris? Show all users in the database.
+```
+
+**What happens:**
+- Step 1: Adds the user
+- Step 2: Gets the weather in Paris
+- Step 3: Shows all users (including Priya)
+
+Each step’s result is shown in the chat UI, with tool and parameter info for transparency.
+
 ### Web Interface (Recommended)
 
 1. **Start the server:**
@@ -177,6 +205,10 @@ Query: "Show me recent SpaceX launches"
 ### 5. Complex Query Demo
 Query: "Tell me about the weather in Tokyo and then show me recent SpaceX missions"
 "This demonstrates multi-tool orchestration and complex query handling."
+
+### 6. Multi-step Orchestration Demo (NEW)
+Query: "Add a new user named John Doe with email john@example.com. What is the weather in Paris? Show all users in the database."
+"The system splits the prompt into three steps, executes each in order, and displays step-by-step results in the chat UI."
 
 ## System Architecture
 
