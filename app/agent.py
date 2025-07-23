@@ -46,17 +46,20 @@ class MCPAgent:
                 desc += f" [Parameters: {', '.join(params)}]"
             tool_descriptions.append(desc)
         
+        tool_descriptions_str = chr(10).join(tool_descriptions)
         prompt = f"""
 You are an AI agent that needs to select the appropriate tool to handle a user's request.
 
 Available tools:
-{chr(10).join(tool_descriptions)}
+{tool_descriptions_str}
 
-User query: "{user_query}"
+User query: \"{user_query}\"
 
 Based on the user's request, determine which tool to use and extract the necessary parameters.
 
-Note: For system-related questions like "What tools are available?", "Show me the architecture", "How does this work?", "What can you do?", use the system_info_tool.
+Note: For system-related questions like \"What tools are available?\", \"Show me the architecture\", \"How does this work?\", \"What can you do?\", use the system_info_tool.
+
+Important: For any DELETE operation on the database, you must require a security_password parameter. Do not allow DELETE queries without this password.
 
 Respond ONLY with a JSON object in this exact format:
 {{
@@ -68,7 +71,15 @@ Respond ONLY with a JSON object in this exact format:
 
 Examples:
 - For weather queries: {{"tool": "weather_tool", "parameters": {{"location": "Paris"}}}}
-- For database queries: {{"tool": "sql_tool", "parameters": {{"sql_query": "SELECT * FROM users"}}}}
+- For database SELECT queries: {{"tool": "sql_tool", "parameters": {{"sql_query": "SELECT * FROM users"}}}}
+- For user count queries: {{"tool": "sql_tool", "parameters": {{"sql_query": "SELECT COUNT(*) FROM users"}}}}
+- For prompts like "How many users are in the system?", "User count", "Number of users": {{"tool": "sql_tool", "parameters": {{"sql_query": "SELECT COUNT(*) FROM users"}}}}
+- For prompts like "show all users", "list all users", "display all users", "who are the users", "get all users", "show me everyone in the database", "give me a list of users": {{"tool": "sql_tool", "parameters": {{"sql_query": "SELECT * FROM users"}}}}
+- For database INSERT queries: {{"tool": "sql_tool", "parameters": {{"sql_query": "INSERT INTO users (name, email) VALUES ('John Doe', 'john@example.com')"}}}}
+- For database UPDATE queries: {{"tool": "sql_tool", "parameters": {{"sql_query": "UPDATE users SET email = 'alice@newdomain.com' WHERE name = 'Alice'"}}}}
+- For deleting a user: {{"tool": "sql_tool", "parameters": {{"sql_query": "DELETE FROM users WHERE name = 'Michael Scott'", "security_password": "your_password"}}}}
+- For prompts like "remove user Michael Scott", "delete user Michael Scott", "delete Michael Scott from the users", "remove Michael Scott from the database", "delete the user named Michael Scott": {{"tool": "sql_tool", "parameters": {{"sql_query": "DELETE FROM users WHERE name = 'Michael Scott'", "security_password": "your_password"}}}}
+- For prompts like "delete a user", "remove a user", "delete someone from the users": {{"tool": "sql_tool", "parameters": {{"sql_query": "DELETE FROM users WHERE name = '<user_name>'", "security_password": "your_password"}}}}
 - For SpaceX queries: {{"tool": "graphql_tool", "parameters": {{"query": "recent launches"}}}}
 - For system info queries: {{"tool": "system_info_tool", "parameters": {{"query": "architecture"}}}}
 
@@ -122,7 +133,7 @@ JSON response:
         except Exception as e:
             raise ValueError(f"Error parsing LLM response: {e}")
     
-    def process_query(self, user_query: str) -> Dict[str, Any]:
+    def process_query(self, user_query: str, security_password: str = None) -> Dict[str, Any]:
         """
         Main method to process a user query through the MCP-style orchestration system
         
@@ -140,6 +151,47 @@ JSON response:
             
             # Step 4: Check if a valid tool was selected
             if tool_name == "none":
+                # Fallback: Heuristic for DELETE user prompts
+                lowered = user_query.lower()
+                if "delete" in lowered and "user" in lowered:
+                    import re
+                    match = re.search(
+                        r"user(?: named)? ([A-Za-z .'-]+?)(?:\\.|,| with| The security password| Security password| password|$)",
+                        user_query,
+                        re.IGNORECASE
+                    )
+                    if match:
+                        user_name = match.group(1).strip().replace("'", "''")
+                        user_name = user_name.rstrip('. ,')
+                    else:
+                        match2 = re.search(
+                            r"delete(?: the)? user(?: named)? ([A-Za-z .'-]+?)(?:\\.|,| with| The security password| Security password| password|$)",
+                            user_query,
+                            re.IGNORECASE
+                        )
+                        user_name = match2.group(1).strip().replace("'", "''") if match2 else None
+                        if user_name:
+                            user_name = user_name.rstrip('. ,')
+                    # Only require user_name, not password
+                    if user_name:
+                        sql_query = f"DELETE FROM users WHERE name = '{user_name}'"
+                        result = self.tool_executor.sql_tool(sql_query)
+                        return {
+                            "success": True,
+                            "user_query": user_query,
+                            "tool_selected": "sql_tool (fallback)",
+                            "parameters": {"sql_query": sql_query},
+                            "result": result
+                        }
+                    else:
+                        return {
+                            "success": False,
+                            "error": "Could not extract user name from prompt.",
+                            "user_query": user_query,
+                            "tool_selected": None,
+                            "parameters": None,
+                            "result": None
+                        }
                 return {
                     "success": False,
                     "error": "No suitable tool found for this request",

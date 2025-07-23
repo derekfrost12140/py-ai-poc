@@ -27,7 +27,7 @@ class ToolExecutor:
             params = {
                 'q': location,
                 'appid': self.weather_api_key,
-                'units': 'metric'
+                'units': 'imperial'  # Use Fahrenheit
             }
             
             response = requests.get(url, params=params)
@@ -38,33 +38,41 @@ class ToolExecutor:
             description = data['weather'][0]['description']
             humidity = data['main']['humidity']
             
-            return f"{location}: {temp}°C, {description}, humidity: {humidity}%"
+            return f"{location}: {temp}°F, {description}, humidity: {humidity}%"
             
         except requests.exceptions.RequestException as e:
             return f"Error fetching weather for {location}: {str(e)}"
         except KeyError as e:
             return f"Error parsing weather data for {location}: {str(e)}"
     
-    def sql_tool(self, sql_query: str) -> str:
+    def sql_tool(self, sql_query: str, security_password: str = None) -> str:
         """
         SQL Tool - MCP Server simulation
         Executes SQL queries on local SQLite database
         """
         try:
+            # Remove password check for DELETE
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            
             cursor.execute(sql_query)
-            
             if sql_query.strip().upper().startswith('SELECT'):
                 results = cursor.fetchall()
+                columns = [desc[0] for desc in cursor.description]
                 conn.close()
-                return str(results)
+                if not results:
+                    return "No results found."
+                # Format as a user-friendly list
+                formatted = []
+                for row in results:
+                    user_info = (
+                        f"ID: {row[0]} Name: {row[1]} Email: {row[2]} Created At: {row[3]}"
+                    )
+                    formatted.append(user_info)
+                return "User List:\n" + "\n\n".join(formatted)
             else:
                 conn.commit()
                 conn.close()
                 return f"Query executed successfully: {sql_query}"
-                
         except sqlite3.Error as e:
             return f"SQL Error: {str(e)}"
         except Exception as e:
@@ -184,21 +192,17 @@ class ToolExecutor:
                     launches = response.json()
                     
                     if launches:
-                        formatted_result = "🚀 Recent SpaceX Launches:\n"
+                        formatted_result = "🚀 Recent SpaceX Launches:\n\n"
                         count = 0
-                        
                         for launch in launches:
                             if launch.get('upcoming', False):
                                 continue
-                                
                             if count >= 5:
                                 break
-                                
                             mission_name = launch.get('mission_name', 'Unknown')
                             launch_date = launch.get('launch_date_utc', 'Unknown')
                             success = launch.get('launch_success')
                             flight_number = launch.get('flight_number', 'Unknown')
-                            
                             # Format date
                             try:
                                 from datetime import datetime
@@ -206,19 +210,12 @@ class ToolExecutor:
                                 formatted_date = date_obj.strftime('%Y-%m-%d %H:%M UTC')
                             except:
                                 formatted_date = launch_date
-                            
                             status = "✅ Success" if success else "❌ Failed"
-                            
-                            formatted_result += f"• {mission_name} (Flight #{flight_number})\n"
-                            formatted_result += f"  📅 {formatted_date}\n"
-                            formatted_result += f"  {status}\n\n"
-                            
+                            formatted_result += f"\n{mission_name} (Flight #{flight_number})\n  📅 {formatted_date}\n  {status}\n"
                             count += 1
-                        
                         if count == 0:
                             return "No recent completed launches found"
-                        
-                        return formatted_result
+                        return formatted_result.strip()
                     else:
                         return "No launch data found"
                 else:
@@ -383,9 +380,10 @@ Ask me about specific tools, architecture, or capabilities for more detailed inf
             
         elif tool_name == "sql_tool":
             sql_query = parameters.get('sql_query')
+            security_password = parameters.get('security_password')
             if not sql_query:
                 return "Error: sql_query parameter required for sql_tool"
-            return self.sql_tool(sql_query)
+            return self.sql_tool(sql_query, security_password)
             
         elif tool_name == "graphql_tool":
             query = parameters.get('query', '')

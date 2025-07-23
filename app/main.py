@@ -32,6 +32,7 @@ app.add_middleware(
 # Pydantic models for request/response
 class QueryRequest(BaseModel):
     query: str
+    security_password: Optional[str] = None
 
 class QueryResponse(BaseModel):
     success: bool
@@ -96,7 +97,7 @@ async def process_query(request: QueryRequest):
     
     try:
         # Process the query through our MCP-style agent
-        result = mcp_agent.process_query(request.query)
+        result = mcp_agent.process_query(request.query, request.security_password)
         
         return QueryResponse(**result)
         

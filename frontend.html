@@ -251,7 +251,7 @@
                 bubble.style.color = '#c62828';
                 bubble.style.border = '1px solid #f44336';
             }
-            bubble.innerHTML = content;
+            bubble.innerHTML = content.replace(/\n/g, '<br>');
             if (toolInfo && !isUser) {
                 bubble.innerHTML += `
                     <div class="tool-info">
