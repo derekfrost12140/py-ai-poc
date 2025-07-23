@@ -39,7 +39,7 @@ class QueryResponse(BaseModel):
     user_query: str
     tool_selected: Optional[str] = None
     parameters: Optional[Dict[str, Any]] = None
-    result: Optional[str] = None
+    result: Optional[Any] = None  # Accept list or string
     error: Optional[str] = None
 
 # Initialize MCP Agent

@@ -133,25 +133,58 @@ JSON response:
         except Exception as e:
             raise ValueError(f"Error parsing LLM response: {e}")
     
+    def _split_instructions(self, user_query: str) -> list:
+        """Split a user query into multiple instructions based on delimiters."""
+        import re
+        # Split on '.', ';', ' and ', or newlines, but keep delimiters for context
+        # Avoid splitting inside email addresses or numbers
+        # This is a simple heuristic and can be improved
+        parts = re.split(r'(?<=[.!?])\s+|\band\b|;|\n', user_query)
+        # Remove empty and whitespace-only parts
+        return [p.strip() for p in parts if p.strip()]
+
     def process_query(self, user_query: str, security_password: str = None) -> Dict[str, Any]:
         """
         Main method to process a user query through the MCP-style orchestration system
-        
-        This simulates the complete MCP Client -> MCP Registry -> MCP Server flow
+        Now supports multi-step prompts with step-by-step results.
         """
         try:
-            # Step 1: MCP Client - Create prompt for tool selection
+            instructions = self._split_instructions(user_query)
+            if len(instructions) > 1:
+                step_results = []
+                for idx, instr in enumerate(instructions, 1):
+                    single_result = self._process_single_query(instr, security_password)
+                    step_results.append({
+                        "step": idx,
+                        **single_result
+                    })
+                return {
+                    "success": all(r.get("success", False) for r in step_results),
+                    "user_query": user_query,
+                    "tool_selected": None,
+                    "parameters": None,
+                    "result": step_results,
+                    "error": None if all(r.get("success", False) for r in step_results) else "One or more steps failed. See results."
+                }
+            else:
+                return self._process_single_query(user_query, security_password)
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "user_query": user_query,
+                "tool_selected": None,
+                "parameters": None,
+                "result": None
+            }
+
+    def _process_single_query(self, user_query: str, security_password: str = None) -> Dict[str, Any]:
+        """Process a single instruction (existing logic)."""
+        try:
             prompt = self._create_tool_selection_prompt(user_query)
-            
-            # Step 2: MCP Client - Call LLM to determine tool and parameters
             llm_response = self._call_openai(prompt)
-            
-            # Step 3: MCP Client - Parse LLM response
             tool_name, parameters = self._parse_llm_response(llm_response)
-            
-            # Step 4: Check if a valid tool was selected
             if tool_name == "none":
-                # Fallback: Heuristic for DELETE user prompts
                 lowered = user_query.lower()
                 if "delete" in lowered and "user" in lowered:
                     import re
@@ -172,7 +205,6 @@ JSON response:
                         user_name = match2.group(1).strip().replace("'", "''") if match2 else None
                         if user_name:
                             user_name = user_name.rstrip('. ,')
-                    # Only require user_name, not password
                     if user_name:
                         sql_query = f"DELETE FROM users WHERE name = '{user_name}'"
                         result = self.tool_executor.sql_tool(sql_query)
@@ -200,11 +232,7 @@ JSON response:
                     "parameters": None,
                     "result": None
                 }
-            
-            # Step 5: MCP Server - Execute the selected tool
             result = self.tool_executor.execute_tool(tool_name, parameters)
-            
-            # Step 6: Return formatted response
             return {
                 "success": True,
                 "user_query": user_query,
@@ -212,7 +240,6 @@ JSON response:
                 "parameters": parameters,
                 "result": result
             }
-            
         except Exception as e:
             return {
                 "success": False,

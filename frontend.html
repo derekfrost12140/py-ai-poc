@@ -251,7 +251,29 @@
                 bubble.style.color = '#c62828';
                 bubble.style.border = '1px solid #f44336';
             }
-            bubble.innerHTML = content.replace(/\n/g, '<br>');
+            // Multi-step support: handle array or string
+            if (Array.isArray(content)) {
+                bubble.innerHTML = content
+                    .filter(step =>
+                        (step.tool_selected && step.tool_selected !== 'null') ||
+                        (step.parameters && typeof step.parameters === 'object' && Object.keys(step.parameters).length > 0) ||
+                        (typeof step.result === 'string' && step.result.trim() !== '')
+                    )
+                    .map((step, idx) => {
+                        let stepTitle = step.step ? `<strong>Step ${step.step}:</strong> ` : '';
+                        let stepResult = (typeof step.result === 'string') ? step.result.replace(/\n/g, '<br>') : JSON.stringify(step.result, null, 2);
+                        let toolInfoHtml = '';
+                        const hasTool = step.tool_selected && step.tool_selected !== 'null';
+                        const hasParams = step.parameters && typeof step.parameters === 'object' && Object.keys(step.parameters).length > 0;
+                        if (hasTool || hasParams) {
+                            toolInfoHtml = `<div class="tool-info">\n                        <strong>Tool Used:</strong> ${hasTool ? step.tool_selected : 'N/A'}<br>\n                        <strong>Parameters:</strong> ${hasParams ? JSON.stringify(step.parameters) : 'N/A'}\n                    </div>`;
+                        }
+                        return `${stepTitle}${stepResult}${toolInfoHtml}`;
+                    })
+                    .join('<hr style="border:0;border-top:1px solid #eee;margin:8px 0;">');
+            } else {
+                bubble.innerHTML = (typeof content === 'string' ? content.replace(/\n/g, '<br>') : JSON.stringify(content, null, 2));
+            }
             if (toolInfo && !isUser) {
                 bubble.innerHTML += `
                     <div class="tool-info">
