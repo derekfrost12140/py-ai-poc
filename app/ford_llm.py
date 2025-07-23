@@ -7,7 +7,7 @@ import json
 def call_model(state):
     """
     Calls Ford's internal LLM using OpenAI-style chat/completions format.
-    - Endpoint: from LLM_URL env var
+    - Endpoint: from LLM_URL env var (required)
     - Bearer token: from LLM_AUTH_TOKEN env var
     - Payload: {"model", "messages", "temperature"}
     - state.messages: list of HumanMessage, AIMessage, or FunctionMessage (dicts/objects)
@@ -15,7 +15,9 @@ def call_model(state):
     - Handles tool_calls if present in AIMessage
     - Robust error handling
     """
-    LLM_URL = os.getenv("LLM_URL", "https://api.pivpn.core.ford.com/fordllmapi/api/v1/chat/completions")
+    LLM_URL = os.getenv("LLM_URL")
+    if not LLM_URL:
+        raise ValueError("LLM_URL environment variable must be set (no default provided)")
     LLM_AUTH_TOKEN = os.getenv("LLM_AUTH_TOKEN", "<YOUR_FORD_LLM_TOKEN>")
     MODEL = os.getenv("LLM_MODEL", "ford-llm-chat")
     TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
