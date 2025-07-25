@@ -52,7 +52,7 @@
             flex: 1 1 auto;
             min-height: 0;
             overflow-y: auto;
-            padding: 18px 16px 112px 16px; /* Add bottom padding for examples + input bar */
+            padding: 18px 16px 192px 16px; /* 80px for input-bar + 112px for examples */
             display: flex;
             flex-direction: column;
             gap: 12px;
@@ -113,10 +113,17 @@
             position: absolute;
             left: 0;
             right: 0;
-            bottom: 100px; /* Height of .examples */
+            bottom: 112px; /* Height of .examples */
             background: #fff;
             border-top: 1px solid #e3e6f0;
             z-index: 2;
+            padding: 14px 16px 14px 16px;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            min-height: 80px;
+            max-height: 80px;
+            flex-shrink: 0;
         }
         #queryInput {
             flex: 1;
@@ -176,7 +183,7 @@
             bottom: 0;
             background: #fff;
             border-top: 1px solid #e3e6f0;
-            min-height: 100px;
+            min-height: 112px;
             z-index: 2;
             padding: 12px 16px 12px 16px;
         }
