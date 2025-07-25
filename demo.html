@@ -20,7 +20,7 @@
         .container {
             display: flex;
             flex-direction: column;
-            height: 90vh;
+            min-height: 90vh; /* Changed from height to min-height */
             max-width: 600px;
             width: 100%;
             margin: 32px 0 20px 0;
@@ -366,6 +366,7 @@
         const chatContainerDiv = document.getElementById('chatContainer');
         let inputVisible = true;
         toggleInputBar.onclick = function() {
+            console.log('Toggle input bar clicked. Current state:', inputVisible); // Debug log
             inputVisible = !inputVisible;
             if (!inputVisible) {
                 inputExamplesWrapper.style.maxHeight = inputExamplesWrapper.offsetHeight + 'px';
@@ -397,6 +398,9 @@
         // Set initial max-height for smooth animation
         inputExamplesWrapper.style.overflow = 'hidden';
         inputExamplesWrapper.style.maxHeight = '500px';
+
+        // Prevent input bar from hiding on sendQuery or sendExample
+        // (No code should call toggleInputBar.onclick or change inputVisible except the click handler above)
     </script>
 </body>
 </html>
