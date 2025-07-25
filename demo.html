@@ -407,3 +407,43 @@
     </script>
 </body>
 </html>
+
+    def sql_tool(self, sql_query: str, security_password: str = None) -> str:
+        """
+        SQL Tool - MCP Server simulation
+        Executes SQL queries on local SQLite database
+        """
+        import time
+        for attempt in range(3):
+            try:
+                conn = sqlite3.connect(self.db_path)
+                cursor = conn.cursor()
+                cursor.execute(sql_query)
+                if sql_query.strip().upper().startswith('SELECT'):
+                    results = cursor.fetchall()
+                    columns = [desc[0] for desc in cursor.description]
+                    conn.close()
+                    if not results:
+                        return "No results found."
+                    # Format as a user-friendly list
+                    formatted = []
+                    for row in results:
+                        user_info = (
+                            f"ID: {row[0]} Name: {row[1]} Email: {row[2]} Created At: {row[3]}"
+                        )
+                        formatted.append(user_info)
+                    return "User List:\n" + "\n\n".join(formatted)
+                else:
+                    conn.commit()
+                    conn.close()
+                    return f"Query executed successfully: {sql_query}"
+            except sqlite3.OperationalError as e:
+                if 'database is locked' in str(e) and attempt < 2:
+                    time.sleep(0.2)
+                    continue
+                else:
+                    return f"SQL Error: {str(e)}"
+            except sqlite3.Error as e:
+                return f"SQL Error: {str(e)}"
+            except Exception as e:
+                return f"Error executing SQL query: {str(e)}"
