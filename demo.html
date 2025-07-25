@@ -31,11 +31,14 @@
             overflow: hidden;
         }
         .header {
+            position: sticky;
+            top: 0;
+            z-index: 10;
             background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
             color: #fff;
             padding: 32px 24px 24px 24px;
             text-align: center;
-            position: relative;
+            box-shadow: 0 2px 8px rgba(76, 68, 182, 0.10);
         }
         .header h1 {
             font-size: 2.2em;
@@ -127,6 +130,9 @@
             background: #667eea;
             color: #fff;
             border-color: #667eea;
+        }
+        .dark-mode .examples h3 {
+            color: #b983ff;
         }
         .chat-container {
             flex: 1 1 auto;
@@ -303,10 +309,12 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🤖 MCP Agent</h1>
-            <p>AI-powered tool orchestration system</p>
-            <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">🌙</button>
+        <div class="chat-container" id="chatContainer">
+            <div class="header">
+                <h1>🤖 MCP Agent</h1>
+                <p>AI-powered tool orchestration system</p>
+                <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">🌙</button>
+            </div>
         </div>
         <div style="text-align:center; margin: 0 0 18px 0; color: #3a2c5c; font-size: 1.18em; letter-spacing: 0.5px; font-family: 'Inter', Arial, sans-serif; font-weight: 700; text-shadow: 0 1px 4px rgba(102,126,234,0.13); display:none;">
             <span style="font-weight: 800; color: #764ba2;">#Made with passion</span> by Devansh Swami
@@ -314,22 +322,21 @@
         <div id="toggleInputBar" style="text-align:center; background:#f6f7fb; cursor:pointer; padding:6px 0; font-size:1.1em; color:#764ba2; user-select:none; border-bottom:1px solid #e3e6f0;">
             <span id="toggleIcon">▼</span> Hide Input & Examples
         </div>
-        <div class="chat-container" id="chatContainer"></div>
+        <div class="examples">
+            <h3>💡 Try these examples:</h3>
+            <div class="example-buttons">
+                <button class="example-btn" onclick="sendExample('What is the weather in Paris?')">Weather in Paris</button>
+                <button class="example-btn" onclick="sendExample('Show all users in the database')">List Users</button>
+                <button class="example-btn" onclick="sendExample('What were the last 3 SpaceX launches?')">SpaceX Launches</button>
+                <button class="example-btn" onclick="sendExample('How many users are in the system?')">User Count</button>
+                <button class="example-btn" onclick="sendExample('What is the temperature in Tokyo?')">Tokyo Weather</button>
+            </div>
+        </div>
         <div id="inputExamplesWrapper">
             <div class="input-bar">
                 <input type="text" id="queryInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
                 <button id="sendButton" onclick="sendQuery()">Send</button>
                 <button class="clear-btn" onclick="clearChat()">Clear Chat</button>
-            </div>
-            <div class="examples">
-                <h3>💡 Try these examples:</h3>
-                <div class="example-buttons">
-                    <button class="example-btn" onclick="sendExample('What is the weather in Paris?')">Weather in Paris</button>
-                    <button class="example-btn" onclick="sendExample('Show all users in the database')">List Users</button>
-                    <button class="example-btn" onclick="sendExample('What were the last 3 SpaceX launches?')">SpaceX Launches</button>
-                    <button class="example-btn" onclick="sendExample('How many users are in the system?')">User Count</button>
-                    <button class="example-btn" onclick="sendExample('What is the temperature in Tokyo?')">Tokyo Weather</button>
-                </div>
             </div>
         </div>
     </div>
