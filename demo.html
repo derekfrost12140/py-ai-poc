@@ -16,12 +16,12 @@
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            overflow: hidden; /* Prevent page scroll */
+            overflow: auto; /* Allow page to scroll */
         }
         .container {
             display: flex;
             flex-direction: column;
-            height: 80vh;
+            min-height: 80vh; /* Use min-height instead of height */
             max-width: 600px;
             width: 100%;
             margin: 32px 0 20px 0;
@@ -35,6 +35,7 @@
             color: #fff;
             padding: 32px 24px 24px 24px;
             text-align: center;
+            position: relative;
         }
         .header h1 {
             font-size: 2.2em;
@@ -46,6 +47,86 @@
             font-size: 1.1em;
             opacity: 0.92;
             margin: 0;
+        }
+        .dark-toggle {
+            position: absolute;
+            top: 18px;
+            right: 24px;
+            background: #fff2;
+            border: none;
+            color: #fff;
+            font-size: 1.3em;
+            border-radius: 8px;
+            padding: 6px 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .dark-toggle:hover {
+            background: #fff4;
+        }
+        body.dark-mode {
+            background: linear-gradient(135deg, #232946 0%, #181c2f 100%);
+        }
+        .dark-mode .container {
+            background: #232946;
+            color: #eaeaea;
+            box-shadow: 0 8px 32px rgba(30, 30, 60, 0.25);
+        }
+        .dark-mode .header {
+            background: linear-gradient(90deg, #232946 0%, #181c2f 100%);
+            color: #eaeaea;
+        }
+        .dark-mode .chat-container {
+            background: #181c2f;
+        }
+        .dark-mode .bubble {
+            background: #232946;
+            color: #eaeaea;
+            border: 1px solid #353a5a;
+        }
+        .dark-mode .message-row.user .bubble {
+            background: linear-gradient(90deg, #353a5a 0%, #232946 100%);
+            color: #fff;
+        }
+        .dark-mode .input-bar {
+            background: #232946;
+            border-top: 1px solid #353a5a;
+        }
+        .dark-mode #queryInput {
+            background: #181c2f;
+            color: #eaeaea;
+            border: 2px solid #353a5a;
+        }
+        .dark-mode #queryInput:focus {
+            border-color: #a1a7e0;
+        }
+        .dark-mode #sendButton {
+            background: linear-gradient(90deg, #353a5a 0%, #232946 100%);
+            color: #fff;
+        }
+        .dark-mode #sendButton:hover {
+            background: linear-gradient(90deg, #232946 0%, #353a5a 100%);
+        }
+        .dark-mode .clear-btn {
+            background: linear-gradient(90deg, #ff6a6a 0%, #a13d3d 100%);
+            color: #fff;
+        }
+        .dark-mode .clear-btn:hover {
+            background: linear-gradient(90deg, #a13d3d 0%, #ff6a6a 100%);
+        }
+        .dark-mode .examples {
+            background: #232946;
+            border-top: 1px solid #353a5a;
+        }
+        .dark-mode .example-btn {
+            background: #353a5a;
+            color: #eaeaea;
+            border: 1px solid #353a5a;
+        }
+        .dark-mode .example-btn:hover {
+            background: #667eea;
+            color: #fff;
+            border-color: #667eea;
         }
         .chat-container {
             flex: 1 1 auto;
@@ -225,6 +306,7 @@
         <div class="header">
             <h1>🤖 MCP Agent</h1>
             <p>AI-powered tool orchestration system</p>
+            <button class="dark-toggle" id="darkToggle" title="Toggle dark mode">🌙</button>
         </div>
         <div style="text-align:center; margin: 0 0 18px 0; color: #3a2c5c; font-size: 1.18em; letter-spacing: 0.5px; font-family: 'Inter', Arial, sans-serif; font-weight: 700; text-shadow: 0 1px 4px rgba(102,126,234,0.13); display:none;">
             <span style="font-weight: 800; color: #764ba2;">#Made with passion</span> by Devansh Swami
@@ -404,64 +486,27 @@
 
         // Prevent input bar from hiding on sendQuery or sendExample
         // (No code should call toggleInputBar.onclick or change inputVisible except the click handler above)
+
+        // DARK MODE TOGGLE
+        const darkToggle = document.getElementById('darkToggle');
+        function setDarkMode(on) {
+            if (on) {
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('darkMode', '1');
+                darkToggle.textContent = '☀️';
+                darkToggle.title = 'Switch to light mode';
+            } else {
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('darkMode', '0');
+                darkToggle.textContent = '🌙';
+                darkToggle.title = 'Switch to dark mode';
+            }
+        }
+        darkToggle.onclick = function() {
+            setDarkMode(!document.body.classList.contains('dark-mode'));
+        };
+        // On load, set mode from localStorage
+        setDarkMode(localStorage.getItem('darkMode') === '1');
     </script>
 </body>
 </html>
-
-    def sql_tool(self, sql_query: str, security_password: str = None) -> str:
-    """
-    SQL Tool - MCP Server simulation
-    Executes SQL queries on local SQLite database
-    """
-    import time
-    for attempt in range(3):
-        try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            cursor.execute(sql_query)
-            if sql_query.strip().upper().startswith('SELECT'):
-                results = cursor.fetchall()
-                columns = [desc[0] for desc in cursor.description]
-                conn.close()
-                if not results:
-                    return "No results found."
-                # Handle COUNT(*) queries
-                if len(columns) == 1 and columns[0].lower() == 'count(*)':
-                    if results and len(results[0]) > 0:
-                        count = results[0][0]
-                        return f"Total count: {count}"
-                    else:
-                        return "Error: COUNT query did not return a valid result."
-                # Handle full user queries (4 columns)
-                elif len(columns) == 4:
-                    formatted = []
-                    for row in results:
-                        try:
-                            user_info = (
-                                f"ID: {row[0]} Name: {row[1]} Email: {row[2]} Created At: {row[3]}"
-                            )
-                            formatted.append(user_info)
-                        except IndexError:
-                            return f"Error: Query returned {len(row)} columns but expected 4. Raw result: {row}"
-                    return "User List:\n" + "\n\n".join(formatted)
-                # Generic handling for other SELECT queries
-                else:
-                    formatted = []
-                    for row in results:
-                        row_info = " | ".join(str(cell) for cell in row)
-                        formatted.append(row_info)
-                    return "Results:\n" + "\n".join(formatted)
-            else:
-                conn.commit()
-                conn.close()
-                return f"Query executed successfully: {sql_query}"
-        except sqlite3.OperationalError as e:
-            if 'database is locked' in str(e) and attempt < 2:
-                time.sleep(0.2)
-                continue
-            else:
-                return f"SQL Error: {str(e)}"
-        except sqlite3.Error as e:
-            return f"SQL Error: {str(e)}"
-        except Exception as e:
-            return f"Error executing SQL query: {str(e)}"
