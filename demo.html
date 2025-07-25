@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MCP Agent Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            max-width: 600px;
+            width: 100%;
+            margin: 32px 0 20px 0;
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(76, 68, 182, 0.15);
+            overflow: hidden;
+            /* Add a fixed height for flex layout
+            height: 80vh;
+            min-height: 500px;
+
+             *//* Increasing the height to accomodate input area*/
+
+        }
+        .header {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 32px 24px 24px 24px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.2em;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            letter-spacing: 1px;
+        }
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.92;
+            margin: 0;
+        }
+        .chat-container {
+            /* Remove fixed height, use flex-grow */
+            /* Use flex-grow but with a max-height to prevent overflow */
+            flex: 1 1 auto;
+            /*max-height: calc(90vh - 200px);*/
+            min-height:0;
+            overflow-y: auto;
+            padding: 18px 16px 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #f6f7fb;
+            /*transition: height 0.4s cubic-bezier(0.4,0,0.2,1);*/
+        }
+        .message-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            animation: fadeIn 0.5s;
+        }
+        .message-row.user {
+            flex-direction: row-reverse;
+        }
+        .avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #e0e7ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #667eea;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.08);
+        }
+        .bubble {
+            max-width: 70%;
+            padding: 14px 18px;
+            border-radius: 18px;
+            font-size: 1.05em;
+            line-height: 1.5;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.06);
+            position: relative;
+            transition: background 0.2s;
+        }
+        .message-row.user .bubble {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-bottom-right-radius: 6px;
+        }
+        .message-row.agent .bubble {
+            background: #fff;
+            color: #333;
+            border-bottom-left-radius: 6px;
+            border: 1px solid #e3e6f0;
+        }
+        .tool-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 8px 12px;
+            margin-top: 8px;
+            font-size: 0.95em;
+            border-radius: 8px;
+        }
+        .input-bar {
+            background: #fff;
+            padding: 14px 16px 14px 16px;
+            border-top: 1px solid #e3e6f0;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            /*position: sticky;
+            bottom: 0;
+            z-index: 2;
+            /*Ensure input area is always visible*/
+            min-height: 80px;
+            max-height: 80px;
+            flex-shrink: 0;
+        }
+        #queryInput {
+            flex: 1;
+            padding: 14px 16px;
+            border: 2px solid #e3e6f0;
+            border-radius: 12px;
+            font-size: 1.08em;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        #queryInput:focus {
+            border-color: #764ba2;
+        }
+        #sendButton, .clear-btn {
+            min-width: 120px;
+            min-height: 48px;
+            font-size: 1.08em;
+            font-weight: 600;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.10);
+            border: none;
+            transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+        }
+        #sendButton {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+        #sendButton:hover {
+            background: linear-gradient(90deg, #764ba2 0%, #667eea 100%);
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 4px 16px rgba(102,126,234,0.18);
+        }
+        .clear-btn {
+            background: linear-gradient(90deg, #ff6a6a 0%, #ff3d3d 100%);
+            color: #fff;
+            margin-left: 0;
+        }
+        .clear-btn:hover {
+            background: linear-gradient(90deg, #ff3d3d 0%, #ff6a6a 100%);
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 4px 16px rgba(255,76,76,0.13);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @media (max-width: 600px) {
+            .container { max-width: 100vw; border-radius: 0; margin: 0; }
+            .chat-container { height: 220px; padding: 8px 2px 6px 2px; }
+            .input-bar { padding: 8px 2px; }
+            .examples { padding: 6px 2px; }
+        }
+        .examples {
+            padding: 12px 16px 12px 16px;
+            background: #fff;
+            border-top: 1px solid #e3e6f0;
+            min-height:100px;
+        }
+        .examples h3 {
+            font-size: 1.2em;
+            margin-bottom: 12px;
+            color: #3a2c5c;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .example-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .example-btn {
+            min-width: 140px;
+            min-height: 44px;
+            padding: 10px 18px;
+            background: #e9ecef;
+            border: 1px solid #dee2e6;
+            border-radius: 22px;
+            cursor: pointer;
+            font-size: 1.05em;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.3s;
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .example-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        #toggleInputBar {
+            transition: background 0.2s;
+        }
+        #toggleInputBar:hover {
+            background: #e0e7ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 MCP Agent</h1>
+            <p>AI-powered tool orchestration system</p>
+        </div>
+        <div style="text-align:center; margin: 0 0 18px 0; color: #3a2c5c; font-size: 1.18em; letter-spacing: 0.5px; font-family: 'Inter', Arial, sans-serif; font-weight: 700; text-shadow: 0 1px 4px rgba(102,126,234,0.13); display:none;">
+            <span style="font-weight: 800; color: #764ba2;">#Made with passion</span> by Devansh Swami
+        </div>
+        <div id="toggleInputBar" style="text-align:center; background:#f6f7fb; cursor:pointer; padding:6px 0; font-size:1.1em; color:#764ba2; user-select:none; border-bottom:1px solid #e3e6f0;">
+            <span id="toggleIcon">▼</span> Hide Input & Examples
+        </div>
+        <div class="chat-container" id="chatContainer"></div>
+        <div id="inputExamplesWrapper">
+            <div class="input-bar">
+                <input type="text" id="queryInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+                <button id="sendButton" onclick="sendQuery()">Send</button>
+                <button class="clear-btn" onclick="clearChat()">Clear Chat</button>
+            </div>
+            <div class="examples">
+                <h3>💡 Try these examples:</h3>
+                <div class="example-buttons">
+                    <button class="example-btn" onclick="sendExample('What is the weather in Paris?')">Weather in Paris</button>
+                    <button class="example-btn" onclick="sendExample('Show all users in the database')">List Users</button>
+                    <button class="example-btn" onclick="sendExample('What were the last 3 SpaceX launches?')">SpaceX Launches</button>
+                    <button class="example-btn" onclick="sendExample('How many users are in the system?')">User Count</button>
+                    <button class="example-btn" onclick="sendExample('What is the temperature in Tokyo?')">Tokyo Weather</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        const chatContainer = document.getElementById('chatContainer');
+        const queryInput = document.getElementById('queryInput');
+        const sendButton = document.getElementById('sendButton');
+
+        function addMessage(content, isUser = false, toolInfo = null, isError = false) {
+            const row = document.createElement('div');
+            row.className = 'message-row ' + (isUser ? 'user' : 'agent');
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.textContent = isUser ? '🧑' : '🤖';
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            if (isError) {
+                bubble.style.background = '#ffebee';
+                bubble.style.color = '#c62828';
+                bubble.style.border = '1px solid #f44336';
+            }
+            // Multi-step support: handle array or string
+            if (Array.isArray(content)) {
+                bubble.innerHTML = content
+                    .filter(step =>
+                        (step.tool_selected && step.tool_selected !== 'null') ||
+                        (step.parameters && typeof step.parameters === 'object' && Object.keys(step.parameters).length > 0) ||
+                        (typeof step.result === 'string' && step.result.trim() !== '')
+                    )
+                    .map((step, idx) => {
+                        let stepTitle = step.step ? `<strong>Step ${step.step}:</strong> ` : '';
+                        let stepResult = (typeof step.result === 'string') ? step.result.replace(/\n/g, '<br>') : JSON.stringify(step.result, null, 2);
+                        let toolInfoHtml = '';
+                        const hasTool = step.tool_selected && step.tool_selected !== 'null';
+                        const hasParams = step.parameters && typeof step.parameters === 'object' && Object.keys(step.parameters).length > 0;
+                        if (hasTool || hasParams) {
+                            toolInfoHtml = `<div class="tool-info">\n                        <strong>Tool Used:</strong> ${hasTool ? step.tool_selected : 'N/A'}<br>\n                        <strong>Parameters:</strong> ${hasParams ? JSON.stringify(step.parameters) : 'N/A'}\n                    </div>`;
+                        }
+                        return `${stepTitle}${stepResult}${toolInfoHtml}`;
+                    })
+                    .join('<hr style="border:0;border-top:1px solid #eee;margin:8px 0;">');
+            } else {
+                bubble.innerHTML = (typeof content === 'string' ? content.replace(/\n/g, '<br>') : JSON.stringify(content, null, 2));
+            }
+            if (toolInfo && !isUser) {
+                bubble.innerHTML += `
+                    <div class="tool-info">
+                        <strong>Tool Used:</strong> ${toolInfo.tool}<br>
+                        <strong>Parameters:</strong> ${JSON.stringify(toolInfo.parameters)}
+                    </div>
+                `;
+            }
+            row.appendChild(avatar);
+            row.appendChild(bubble);
+            chatContainer.appendChild(row);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function setLoading(loading) {
+            sendButton.disabled = loading;
+            if (loading) {
+                sendButton.innerHTML = '<span class="loading"></span> Processing...';
+            } else {
+                sendButton.innerHTML = 'Send';
+            }
+        }
+
+        async function sendQuery() {
+            const query = queryInput.value.trim();
+            if (!query) return;
+            addMessage(query, true);
+            queryInput.value = '';
+            setLoading(true);
+            try {
+                const response = await fetch(`${API_BASE_URL}/query`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                const data = await response.json();
+                if (data.success) {
+                    addMessage(data.result, false, {
+                        tool: data.tool_selected,
+                        parameters: data.parameters
+                    });
+                } else {
+                    addMessage(`Error: ${data.error}`, false, null, true);
+                }
+            } catch (error) {
+                addMessage(`Connection error: ${error.message}. Please make sure the server is running on http://localhost:8000`, false, null, true);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function sendExample(example) {
+            queryInput.value = example;
+            sendQuery();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendQuery();
+            }
+        }
+
+        function clearChat() {
+            chatContainer.innerHTML = '';
+        }
+
+        // SLIDER/MINIMIZE LOGIC
+        const toggleInputBar = document.getElementById('toggleInputBar');
+        const inputExamplesWrapper = document.getElementById('inputExamplesWrapper');
+        const toggleIcon = document.getElementById('toggleIcon');
+        const chatContainerDiv = document.getElementById('chatContainer');
+        let inputVisible = true;
+        toggleInputBar.onclick = function() {
+            inputVisible = !inputVisible;
+            if (!inputVisible) {
+                inputExamplesWrapper.style.maxHeight = inputExamplesWrapper.offsetHeight + 'px';
+                setTimeout(() => {
+                    inputExamplesWrapper.style.transition = 'max-height 0.4s cubic-bezier(0.4,0,0.2,1)';
+                    inputExamplesWrapper.style.maxHeight = '0';
+                    // Expand chat area
+                    chatContainerDiv.style.minHeight = '400px';
+                    // Scroll to bottom after animation
+                    setTimeout(() => {
+                        chatContainerDiv.scrollTop = chatContainerDiv.scrollHeight;
+                    }, 400);
+                }, 10);
+                toggleIcon.textContent = '▲';
+                toggleInputBar.innerHTML = '<span id="toggleIcon">▲</span> Show Input & Examples';
+            } else {
+                inputExamplesWrapper.style.transition = 'max-height 0.4s cubic-bezier(0.4,0,0.2,1)';
+                inputExamplesWrapper.style.maxHeight = '500px';
+                // Restore chat area
+                chatContainerDiv.style.minHeight = '';
+                // Scroll to bottom after animation
+                setTimeout(() => {
+                    chatContainerDiv.scrollTop = chatContainerDiv.scrollHeight;
+                }, 400);
+                toggleIcon.textContent = '▼';
+                toggleInputBar.innerHTML = '<span id="toggleIcon">▼</span> Hide Input & Examples';
+            }
+        };
+        // Set initial max-height for smooth animation
+        inputExamplesWrapper.style.overflow = 'hidden';
+        inputExamplesWrapper.style.maxHeight = '500px';
+    </script>
+</body>
+</html> 
